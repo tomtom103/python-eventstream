@@ -1,0 +1,2 @@
+class Unsubscribed(Exception):
+    pass

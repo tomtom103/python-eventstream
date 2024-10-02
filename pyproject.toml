@@ -1,0 +1,100 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eventstream"
+description = "Python Event Streaming with Redis Streams"
+dynamic = ["version", "readme"]
+authors = [ { name = "Thomas Caron", email = "thomas.caron00@gmail.com" } ]
+requires-python = ">=3.10,<4"
+
+dependencies = [
+    "anyio",
+    "redis",
+    "pydantic",
+    "pydantic-settings"
+]
+
+[project.optional-dependencies]
+cli = [
+    "typer"
+]
+
+test = [
+    # testing
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+    # linting / formatting
+    "black",
+    "ruff",
+    # type-checking
+    "mypy",
+    # type stubs / typeshed
+    # for examples
+    "fastapi[all]"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = """
+    -l
+    -v
+    --doctest-modules
+    --doctest-glob="*.rst"
+"""
+testpaths = ["tests"]
+
+# https://beta.ruff.rs/docs/configuration/#using-rufftoml
+[tool.ruff]
+# Same as Black.
+line-length = 88
+indent-width = 4
+# Assume Python 3.8
+target-version = "py310"
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "I",  # isort
+    "B",  # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = [
+    "E501",  # line too long, handled by black
+    "B008",  # do not perform function calls in argument defaults
+    "W191",  # indentation contains tabs
+]
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
+
+[tool.mypy]
+files = ["src"]
+strict = true
+
+[tool.setuptools.dynamic]
+version = { attr = "eventstream.__version__" }
+readme = { file = ["README.md"] }
