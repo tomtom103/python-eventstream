@@ -1,5 +1,7 @@
 # Python event streaming with Redis Streams
 
+Heavily inspired by https://github.com/encode/broadcaster. I re-implemented the logic since the library is still relatively alpha and doesn't exactly fit the use case.
+
 Improvements to be done:
 
 - Rewrite the redis backend to use stream groups (see https://redis-py.readthedocs.io/en/stable/examples/redis-stream-example.html#Stream-groups)
