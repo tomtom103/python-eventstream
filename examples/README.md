@@ -26,6 +26,8 @@ Received event: {"headers": {"host": "0.0.0.0:8080", "accept": "*/*", "accept-en
 Received event: 7 from channel: api-call-counter
 ```
 
+Running multiple consumers at once will lead to all consumers receiving the published messages
+
 API call:
 
 ```bash

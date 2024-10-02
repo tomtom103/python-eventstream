@@ -10,6 +10,10 @@ StreamMessageType = tuple[bytes, tuple[tuple[bytes, dict[bytes, bytes]]]]
 
 
 class RedisStreamBackend:
+    # TODO: Rebuild the backend using stream groups instead
+    # So that each consumer is able to ack the message incoming from the stream
+    # If a worker fails to process the event, it should be pushed in a DLQ to be retried
+    # See https://redis-py.readthedocs.io/en/stable/examples/redis-stream-example.html#Stream-groups
     def __init__(self, pool: ConnectionPool) -> None:
         self._client = Redis(connection_pool=pool)
         self._streams: dict[
