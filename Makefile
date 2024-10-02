@@ -36,7 +36,7 @@ type-check: | develop
 
 .PHONY: format
 format: | develop
-	.venv/bin/python -m black src tests
+	.venv/bin/python -m black src tests examples
 	.venv/bin/ruff check --fix
 
 .PHONY: clean-redis

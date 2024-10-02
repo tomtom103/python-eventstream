@@ -18,17 +18,13 @@ class RedisStreamBackend:
         self._ready = asyncio.Event()
 
     async def publish(self, channel: str, message: Any) -> None:
-        print(f"Publishing message on channel: {channel}")
-        res = await self._client.xadd(channel, {"message": message})
-        print(f"Response was: {res}")
+        await self._client.xadd(channel, {"message": message})
 
     async def subscribe(self, channel: str) -> None:
         try:
             info = await self._client.xinfo_stream(channel)
-            print(f"xinfo_stream: {info}")
             last_id = info["last-generated-id"]
-        except ResponseError as e:
-            print(f"foo: {repr(e)}")
+        except ResponseError:
             last_id = "0"
         self._streams[channel] = last_id
         self._ready.set()

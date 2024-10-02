@@ -92,7 +92,7 @@ docstring-code-format = true
 docstring-code-line-length = "dynamic"
 
 [tool.mypy]
-files = ["src"]
+files = ["src", "examples"]
 strict = true
 
 [tool.setuptools.dynamic]

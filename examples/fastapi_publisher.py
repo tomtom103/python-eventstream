@@ -23,15 +23,27 @@ async def event_client() -> AsyncIterator[EventStreamClient]:
     async with redis_pool("redis://localhost:6379") as pool:
         yield EventStreamClient(pool)
 
+
 EventClient = Annotated[EventStreamClient, Depends(event_client)]
 
 app = FastAPI(debug=True)
 
+COUNTER_LUA = """local current = redis.call('get', KEYS[1])
+if current == nil then current = 0 end
+return redis.call('incrby', KEYS[1], 1)
+"""
+
+
 @app.get("/foo")
 async def get_foo(client: EventClient, request: Request) -> JSONResponse:
     headers = dict(request.headers)
-    await client.publish('api-access-publisher', json.dumps({"headers": headers}))
+    await client.publish("api-header-publisher", json.dumps({"headers": headers}))
+
+    counter = client._client.register_script(COUNTER_LUA)
+    reply = await counter(keys=("api-header-counter",))
+    await client.publish("api-call-counter", reply)
     return JSONResponse({"status": "ok"})
+
 
 if __name__ == "__main__":
     import uvicorn

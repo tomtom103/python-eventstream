@@ -13,6 +13,7 @@ class EventStreamClient:
     def __init__(self, pool: ConnectionPool):
         # TODO: We could potentially have other backends for this
         self._backend = RedisStreamBackend(pool)
+        self._client = self._backend._client
         self._subscribers: dict[str, set[Queue[Event | None]]] = {}
         self._listener_task: Task[Any] | None = None
 
@@ -40,7 +41,6 @@ class EventStreamClient:
     async def _listener(self) -> None:
         while True:
             event = await self._backend.next_published()
-            print(self._subscribers)
             for queue in list(self._subscribers.get(event.channel, [])):
                 await queue.put(event)
 
