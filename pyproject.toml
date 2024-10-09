@@ -7,13 +7,14 @@ name = "eventstream"
 description = "Python Event Streaming with Redis Streams"
 dynamic = ["version", "readme"]
 authors = [ { name = "Thomas Caron", email = "thomas.caron00@gmail.com" } ]
-requires-python = ">=3.10,<4"
+requires-python = ">=3.12,<4"
 
 dependencies = [
     "anyio",
     "redis",
     "pydantic",
-    "pydantic-settings"
+    "pydantic-settings",
+    "lz4",
 ]
 
 [project.optional-dependencies]
@@ -32,6 +33,7 @@ test = [
     # type-checking
     "mypy",
     # type stubs / typeshed
+    "types-ujson",
     # for examples
     "fastapi[all]"
 ]
@@ -94,6 +96,8 @@ docstring-code-line-length = "dynamic"
 [tool.mypy]
 files = ["src", "examples"]
 strict = true
+
+enable_incomplete_feature = "NewGenericSyntax"
 
 [tool.setuptools.dynamic]
 version = { attr = "eventstream.__version__" }

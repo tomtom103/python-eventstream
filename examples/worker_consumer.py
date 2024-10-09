@@ -1,12 +1,23 @@
 import asyncio
 from collections.abc import AsyncIterator
 from contextlib import AsyncExitStack, asynccontextmanager
+from typing import Any
 
 import anyio
+from pydantic import BaseModel
 from redis.asyncio import ConnectionPool
 
 from eventstream.client import EventStreamClient
-from eventstream.models import Consumer
+from eventstream.models import EventStream
+
+
+class ObservabilityMessage(BaseModel):
+    event_type: str
+    value: str
+
+
+class CounterMessage(BaseModel):
+    count: int
 
 
 @asynccontextmanager
@@ -21,26 +32,26 @@ async def redis_pool(url: str) -> AsyncIterator[ConnectionPool]:
 async def main() -> None:
     async with AsyncExitStack() as stack:
         pool = await stack.enter_async_context(redis_pool("redis://localhost:6379"))
-        client = await stack.enter_async_context(EventStreamClient(pool))
+        client = await stack.enter_async_context(EventStreamClient[Any](pool))
 
-        header_consumer = await stack.enter_async_context(
-            client.subscribe("api-header-publisher")
+        observability_stream: EventStream[ObservabilityMessage] = (
+            await stack.enter_async_context(
+                client.subscribe("observability-event-stream")
+            )
         )
-        counter_consumer = await stack.enter_async_context(
-            client.subscribe("api-call-counter")
+        counter_stream: EventStream[CounterMessage] = await stack.enter_async_context(
+            client.subscribe("counter-event-stream")
         )
 
-        async def consume(consumer: Consumer) -> None:
-            async for message in consumer:
-                if message is None:
+        async def consume[T: BaseModel](stream: EventStream[T]) -> None:
+            async for event in stream:
+                if event is None:
                     raise Exception("End of stream")
-                print(
-                    f"Received event: {message.message} from channel: {message.channel}"
-                )
+                print(f"Received event: {event.message} from channel: {event.channel}")
 
         async with anyio.create_task_group() as tg:
-            tg.start_soon(consume, header_consumer)
-            tg.start_soon(consume, counter_consumer)
+            tg.start_soon(consume, observability_stream)
+            tg.start_soon(consume, counter_stream)
 
 
 if __name__ == "__main__":

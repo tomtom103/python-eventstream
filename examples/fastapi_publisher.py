@@ -1,13 +1,22 @@
-import json
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel
 from redis.asyncio import ConnectionPool
 
 from eventstream.client import EventStreamClient
+
+
+class ObservabilityMessage(BaseModel):
+    event_type: str
+    value: str
+
+
+class CounterMessage(BaseModel):
+    count: int
 
 
 @asynccontextmanager
@@ -19,12 +28,12 @@ async def redis_pool(url: str) -> AsyncIterator[ConnectionPool]:
         await pool.aclose()
 
 
-async def event_client() -> AsyncIterator[EventStreamClient]:
+async def event_client() -> AsyncIterator[EventStreamClient[Any]]:
     async with redis_pool("redis://localhost:6379") as pool:
-        yield EventStreamClient(pool)
+        yield EventStreamClient[Any](pool)
 
 
-EventClient = Annotated[EventStreamClient, Depends(event_client)]
+EventClient = Annotated[EventStreamClient[Any], Depends(event_client)]
 
 app = FastAPI(debug=True)
 
@@ -36,12 +45,16 @@ return redis.call('incrby', KEYS[1], 1)
 
 @app.get("/foo")
 async def get_foo(client: EventClient, request: Request) -> JSONResponse:
-    headers = dict(request.headers)
-    await client.publish("api-header-publisher", json.dumps({"headers": headers}))
+    await client.publish(
+        "observability-event-stream",
+        ObservabilityMessage(event_type="GET", value=str(request.url)),
+    )
 
-    counter = client._client.register_script(COUNTER_LUA)
-    reply = await counter(keys=("api-header-counter",))
-    await client.publish("api-call-counter", reply)
+    counter_script = client._client.register_script(COUNTER_LUA)
+    call_count = await counter_script(keys=(str(request.url),))
+    await client.publish(
+        "counter-event-stream", CounterMessage.model_validate({"count": call_count})
+    )
     return JSONResponse({"status": "ok"})
 
 
